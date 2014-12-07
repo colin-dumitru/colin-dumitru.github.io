@@ -13,6 +13,14 @@ layout: default
 
         <h2>
           <a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
+          <div class="post-preview">
+            {{post.content| strip_html | truncatewords:75}}
+          </div>
+          <div class="post-categories">
+            {% for cat in post.categories %}
+              {{cat}}
+            {% endfor %}
+          </div>
         </h2>
       </li>
     {% endfor %}
