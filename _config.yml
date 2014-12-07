@@ -1,0 +1,14 @@
+# Site settings
+title: Catalin's Journey for Knowledge
+email: colin.dumitru@gmail.com
+description: > 
+  I've always had a passion for putting stuff together and taking them
+  apart again, which ultimatelly led me to programming. Web dev is my passion now,
+  and I aim to share as much knowldge as I can.
+baseurl: ""
+url: "http://colin-dumitru.github.io" # the base hostname & protocol for your site
+twitter_username: colin_dumitru
+github_username:  colin-dumitru
+
+# Build settings
+markdown: kramdown
