@@ -1,31 +1,64 @@
 ---
-layout: default
+layout: home 
 ---
 
-<div class="home">
+<div class="bio">
+    <span class="hello">Hello</span>
+    <div class="photo"></div>
+</div>
 
-  <h1 class="page-heading">Posts</h1>
+<div class="container">
+    <div class="row">
+        <div class="col-lg-3">
+            <blockquote>{{site.description}}</blockquote>
+            <hr>
 
-  <ul class="post-list">
-    {% for post in site.posts %}
-      <li>
-        <span class="post-meta">{{ post.date | date: "%b %-d, %Y" }}</span>
+            <div class="social-icons">
+                {% if site.github_username %}
+                <a href="https://github.com/{{ site.github_username }}">
+                    <img src="/assets/general/64-github.png" />
+                </a>
+                {% endif %} {% if site.twitter_username %}
+                <a href="https://twitter.com/{{ site.twitter_username }}">
+                    <img src="/assets/general/64-twitter.png">
+                </a>
+                {% endif %} {% if site.google_username %}
+                <a href="https://plus.google.com/u/0/+{{site.google_username}}/posts">
+                    <img src="/assets/general/64-googleplus.png">
+                </a>
+                {% endif %} {% if site.linkedin_username %}
+                <a href="https://www.linkedin.com/pub/{{site.linkedin_username}}">
+                    <img src="/assets/general/64-linkedin.png">
+                </a>
+                {% endif %}
 
-        <h2>
-          <a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
-          <div class="post-preview">
-            {{post.content| strip_html | truncatewords:75}}
-          </div>
-          <div class="post-categories">
-            {% for cat in post.categories %}
-              {{cat}}
-            {% endfor %}
-          </div>
-        </h2>
-      </li>
-    {% endfor %}
-  </ul>
+                <a href="{{ " /feed.xml " | prepend: site.baseurl }}">
+                    <img src="/assets/general/64-rss.png">
+                </a>
+            </div>
+        </div>
+        <div class="col-lg-9 home">
 
-  <p class="rss-subscribe">subscribe <a href="{{ "/feed.xml" | prepend: site.baseurl }}">via RSS</a></p>
+            <h1 class="page-heading">Posts</h1>
 
+            <ul class="post-list">
+                {% for post in site.posts %}
+                <li>
+                    <span class="post-meta">{{ post.date | date: "%b %-d, %Y" }}</span>
+
+                    <h2>
+              <a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
+            </h2>
+                    <div class="post-preview">
+                        {{post.content| strip_html | truncatewords:75}}
+                    </div>
+                    <div class="post-categories">
+                        {% for cat in post.categories %} {{cat}} {% endfor %}
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+    </div>
 </div>
