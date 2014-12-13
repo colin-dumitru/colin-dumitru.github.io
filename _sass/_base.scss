@@ -96,3 +96,10 @@ h1 {
     margin-bottom: 20px;
     margin-left: 50px;
 }
+.post-categories {
+  text-align: right;
+}
+
+.post-categories .label-warning {
+  background-color: lighten($primary-500, 20%);
+}

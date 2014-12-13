@@ -1,17 +1,17 @@
 ---
-layout: home 
+layout: home
 ---
 
 <div class="bio">
     <div class="container full">
         <div class="row full">
-            <div class="col-xs-12 full">             
+            <div class="col-xs-12 full">
                 <div class="photo"></div>
-            </div>        
-        </div>    
+            </div>
+        </div>
         <div class="hello_mask">
             <span class="hello">Hello</span>
-        </div>   
+        </div>
     </div>
 </div>
 
@@ -61,7 +61,9 @@ layout: home
                         {{post.content| strip_html | truncatewords:75}}
                     </div>
                     <div class="post-categories">
-                        {% for cat in post.categories %} {{cat}} {% endfor %}
+                        {% for cat in post.categories %}
+                          <span class="label label-warning">{{cat}}</span>
+                        {% endfor %}
                     </div>
                 </li>
                 {% endfor %}
