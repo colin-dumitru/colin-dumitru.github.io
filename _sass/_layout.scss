@@ -12,6 +12,7 @@
 .post-header {
     background-color: $primary-500;
     padding: 26px;
+    box-shadow: 0 0 10px $primary-900;
 }
 .post-header a {
     color: lighten($primary-500, 30%);
