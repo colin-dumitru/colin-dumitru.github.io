@@ -1,0 +1,35 @@
+.site-header {
+    background-color: $primary-700;
+    padding: 10px;
+}
+.site-header a {
+    color: lighten($primary-700, 30%);
+}
+.site-title .glyphicon {
+    font-size: 20px;
+    margin-right: 10px;
+}
+.post-header {
+    background-color: $primary-500;
+    padding: 26px;
+}
+.post-header a {
+    color: lighten($primary-500, 30%);
+}
+.post-header h1 {
+    color: $primary-100;
+    font-weight: 300;
+    @media screen and (min-width: 900px) {
+        font-size: 60px;
+    }
+    @media screen and (max-width: 900px) {
+        font-size: 30px;
+    }
+}
+.post-header blockquote {
+    margin-left: 20px;
+    color: lighten($primary-500, 30%);
+}
+.post-content {
+    padding: 20px;
+}
