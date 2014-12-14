@@ -36,3 +36,9 @@
 .post-content {
     padding: 20px;
 }
+
+.post-content p img {
+  @media screen and (max-width: 900px) {
+    width: 100%;
+  }
+}
