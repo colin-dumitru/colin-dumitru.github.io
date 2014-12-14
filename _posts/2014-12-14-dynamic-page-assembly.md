@@ -2,7 +2,7 @@
 layout: post
 title:  "Dynamic Page Assembly using Service Workers"
 date:   2014-12-14 21:17:45
-categories: service-workers
+categories: service-workers tutorial
 ---
 There's a lot of buzz surrounding Service Workers recently, and rightfully so.
 They allow background processing, push notifications, offline applications,
@@ -12,10 +12,11 @@ is the basis for this Blog post.
 
 We will leverage offline caches and network intercepts to dynamically alter
 regular HTTP pages using Service Workers. The server will send just a skeleton
-of a page and the Service Worker will injects various bits and pieces to make
-a complete page.
+of a page which will get expanded by our Service Worker. We will inject
+cached portions of the final HTML page (called "partials" in our case) into
+predefined placeholders stored inside the requested page.
 
-By doing so, you can cache portions of you web page which change very rarely
+By doing so, you can cache portions of your web page which change very rarely
 or which repeat on multiple pages (such as the header or footer) and just
 deliver the dynamic content which cannot be cached. In practice, this doesn't
 have a huge performance gain as we'll see at the end of the article, but it
@@ -26,7 +27,7 @@ But talk is cheap, so let's get to the code.
 # Prerequisites
 
 This is not a tutorial for Service Workers, so I'm assuming you already know
-how to install, update and debug a Service Workers. We will also use the newly
+how to install, update and debug Service Workers. We will also use the newly
 released Fetch api to intercept Network requests, and IndexDB for cache
 storage. To get up to speed, here are some very well written articles:
 
@@ -51,8 +52,8 @@ To start off, here are the files we'll be working with (you can get the complete
     serviceworker.js
 {% endhighlight %}
 
-And to better understand what we are trying to do, here is the HTML content of
-the two pages the user will request explicelty:
+And to better understand what we're trying to do, here is the HTML content of
+the two pages the user will request explicitly:
 
 **index.html**
 
@@ -86,14 +87,15 @@ Howdy from page 1 <b>#time</b>
 {% endhighlight %}
 
 Now you've probably guessed what the end result will be. The index page is
-just a regular HTML page with three link, but the three pages contain two
-special tags, which tell the background service worker to inject the contents
-of the two specified pages inside the main ```page1.html``` content.
+just a regular HTML page with three links, but the three pages contain two
+special tags, which signals to the background service worker to inject some
+arbitrary content (the "header.html" and "footer.html" pages) before presenting
+the HTML content to the user.
 
 The service worker will fetch the content of a predefined list of "partials"
 which can be injected inside our three pages, namely the header and footer. We
-will store the content of these two partials inside IndexDB, which will
-ultimately get injected into the three pages.
+will store the content of these two partials inside IndexDB, so the content can
+be reused between multiple page requests.
 
 Finally, lets look at the header and footer content, to see what will get
 stored and injected into our main pages.
@@ -118,7 +120,7 @@ This is the footer: <b>#time</b>
 
 Nothing fancy, but it is important to note that the `#time` field will
 get replaced at the runtime with the timestamp of when the browser fetched
-the specific page. We will this way track which pages are requested, and which
+the specific partial. We will this way track which pages are requested, and which
 are cached.
 
 Now, let's get to some JavaScript
@@ -128,7 +130,7 @@ Now, let's get to some JavaScript
 At this stage, we've define our static pages, so it's time to make them
 dynamic. But before we go any further, I'd like to point out that none of the
 code written below is production ready. I've kept the code to a bare minimum to
-be easy to unders understand, but it is no way robust.
+be easy to understand, but it is in no way robust.
 
 With that taken care of, let's start off by installing our service worker:
 
@@ -136,24 +138,24 @@ With that taken care of, let's start off by installing our service worker:
 navigator.serviceWorker.register("/partials/serviceworker.js", { scope: "/partials/" })
   .then(
     function(registration) {
-      console.log("Service worker installed succesfully!", registration);
+      console.log("Service worker installed successfully!", registration);
     },
     function(err) {
       console.error("Error while installing service worker: ", err);
     });
 {% endhighlight %}
 
-Our service worker is registered under the "/partials/" scope, this way it can
-intercept all requests to that particular folder. This particular snippet
+Our service worker is registered under the "/partials/" scope; this way it can
+intercept all requests to that specific folder. This particular snippet
 is injected inside the `index.html` file. You can verify that everything is
 working by going to the `chrome://serviceworker-internals/` page inside Chrome,
 where you should see something similar to this:
 
 ![Checking Service Workers](/assets/posts/dynamic-templates/sw-working.png)
 
-You worker should be in the `Active` state. And as a warning, updating service
+Your worker should be in the `Active` state. And as a warning, updating service
 workers is a bit of a pain, and I haven't found a reliable way of doing so.
-My development processes usually invo;ves editing the JS from the Inspect
+My development processes usually involves editing the JS from the Inspect
 window in Chrome.
 
 Now let's get indexing with some IndexDB.
@@ -214,7 +216,7 @@ start off by defining an auxiliary method for storing a partial path (e.g.
 function storeTemplate(template, body) {
   return new Promise(function (resolve, reject) {
     db.then(function (db) {
-      /* Create a new transation for storing a partial path and it's content */
+      /* Create a new transaction for storing a partial path and it's content */
       var store = db.transaction("templates", "readwrite").objectStore("templates");
 
       /* Add the actual partial */
@@ -229,11 +231,15 @@ function storeTemplate(template, body) {
 
 We open a new transaction to IndexDB on the "templates" store, and then save
 our content into said store. As was mentioned above, most IndexDB operations
-are Async, so we'll once again be using Promises to tie all calls
+are Async, so we'll once again be using Promises to tie all calls.
 
-We also replace the `#time` field defines inside our partial content with the
+We are also replacing the `#time` field defined inside our partial content with the
 timestamp when the request was made. This way, we can validate that the HTML
 content which is injected into our files is requested only once.
+
+Now it's time to fetch the partial content. We will be doing so during the
+"install" phase of our service worker, so we can delay the process until
+all partials have finished downloading and are stored inside our DB.
 
 {% highlight JavaScript %}
 this.addEventListener("install", function (e) {
@@ -253,15 +259,17 @@ this.addEventListener("install", function (e) {
 });
 {% endhighlight %}
 
-The `install` event which we're using in our sample code is fired once the
+The `install` event, which we're using in our sample code, is fired once the
 browser finishes fetching the JS of our service worker and is ready to be
 activated. Normally, the install process of the worker is finished as soon
 as the the handler defined above is finished, but we can delay the activation
 process until the promises sent to the `e.waitUntil(...)` method are resolved.
 
-This way, if the partials have not finished caching, the sever can still
-send the full HTML of the requests pages so the user experience will be
-unchanged.
+This way, if the partials have not finished caching, the server can still
+send the full HTML of the requested pages, so the user experience will be
+unchanged. You can signal to the server that the partials have not finished
+downloading by adding additional headers to the `fetch(...)` call we'll define
+below.
 
 Each of our partials are mapped to a promise which will get resolved once the
 HTML page is fully downloaded and stored into IndexDB. So after the install
@@ -270,8 +278,8 @@ pages, which we can inject into our three pages.
 
 # Intercepting requests and performing dynamic assembly
 
-We're finally to the most intersting part, the actual page assembly. Well...
-not quite. We still have to define an auxiliare method for retrieving our cached
+We're finally to the most interesting part, the actual page assembly. Well...
+not quite. We still have to define an auxiliary method for retrieving our cached
 partials from IndexDB:
 
 {% highlight JavaScript %}
@@ -297,12 +305,13 @@ function getTemplate(template) {
 There's not much to say for this method, it's just standard IndexDB code for
 retrieving objects stored into an object store.
 
-Now for the good part, intercepting requests. With the new Service Worker api,
+Now for the good part, intercepting requests. With the new Service Worker API,
 you can define a handler on the `fetch` event which will intercept all network
 requests on the scope path we defined inside our initialisation stage
 ("/partials/"). This is where our three pages live. So let's see the beast:
 
 {% highlight JavaScript %}
+{% raw %}
 this.addEventListener("fetch", function(event) {
   var mainPromise = fetch(event.request.url)
     .then(function(request) {
@@ -311,7 +320,7 @@ this.addEventListener("fetch", function(event) {
       return request.text();
     })
     .then(function(text) {
-      /* With the full HTML of the page, we can now scan the content for partials
+      /* With the full HTML of the page, we can now scan the content for partials,
       which are of the form {{<partial url>}} */
       return Promise.all(
         [
@@ -341,7 +350,7 @@ this.addEventListener("fetch", function(event) {
       });
 
       /* Finally, return the processed HTML content to the browser to be
-      rendered. Make sure tho set the correct content type. */
+      rendered. Make sure to set the correct content type. */
       return new Response(content, {
         headers: {
           "content-type": "text/html"
@@ -351,19 +360,19 @@ this.addEventListener("fetch", function(event) {
 
   event.respondWith(mainPromise);
 });
+{% endraw %}
 {% endhighlight %}
 
 That's one big chunk of code. To start off, the `fetch` event must resolve
 to either a `Request` object or a promise of one. In our case, it's a promise
 of a request.
 
-The `event.request.url` holds the original URL of the resource being requested,
-in our case the partial pages. We will use this property to fetch the original
-resource using the Fetch API, and after the content is fully downloaded by the
-browser, we can start processing it.
+The `event.request.url` property holds the original URL of the resource being requested (in our case, one of the three pages we defined earlier). We will use this property
+to fetch the original resource using the Fetch API, and after the content is
+fully downloaded by the browser, we can start processing it.
 
-The processing starts by searching for all matches of the `/{{.*?}}/g` regex,
-which returns the placeholders and partial url's to be injected. With this list,
+The processing starts by searching for all matches of the {% raw %} `/{{.*?}}/g` {% endraw %} regex,
+which returns the placeholders and partial URL's to be injected. With this list,
 we can fetch the HTML content of our partials from IndexDB which will get passed
 to the final method.
 
@@ -373,8 +382,8 @@ processing done, it's time to return the content to the browser so it can be
 displayed to the user. Make sure to set the correct content type of the processed
 text so it can be rendered correctly.
 
-The `Response` object receive a plain string which represent the body of the
-requests, and an option objects which, in our case, contains the headers to be
+The `Response` object receives a plain string which represent the body of the
+request, and an option object, which, in our case, contains the headers to be
 sent to the browser for processing.
 
 And that's about it for the code. Nothing fancy, but it works... sort of. So
@@ -388,7 +397,7 @@ to this:
 
 ![Checking Service Workers](/assets/posts/dynamic-templates/example1.png)
 
-And it actual works! (Like I had any doubts, pst). The body is what we requested
+And it actually works! (Like I had any doubts, pst). The body is what we requested
 from the server, but the headers and footers are injected by our service workers
 from a cached version stored inside IndexDB.
 
@@ -399,26 +408,26 @@ when we refresh the page:
 ![Checking Service Workers](/assets/posts/dynamic-templates/example2.png)
 
 The footer and header timestamps have remained the same (`21:43:40`) but the
-body has changed to now be `21:49:12`. This indicates that the only the
+bodys has changed to now be `21:49:12`. This indicates that the only the
 body was requested, achieving the effect we initially planned for.
 
 
 # Final Words
 
-It's important to note that HTML pages is obviously not the only type resources
+It's important to note that HTML pages are obviously not the only type of resource
 which can be intercepted and modified by a Service Worker. It works on JavaScript
 files, CSS and many others, opening the road to modularity in a vast ranges
-of files. You can cache for example JQuery or similar libraries which are used
-on all of your pages, and the browseronly has to request the specific libraries
-for a single page.
+of files. You can, for example, cache JQuery or similar libraries which are used
+on all of your pages, so the browser only has to request the specific libraries
+used on a single page.
 
 But not everything is rainbows. This specific method of doing content injects has
-a serios performance hit. The browser can no longer stream HTML content as
+a serious performance hit. The browser can no longer stream HTML content as
 it has to wait for the Service Worker to finish downloading the entire content.
 This means resources such as images or stylesheets can't start their request until
 the entire original page finishes downloading. Considering this, in most cases
-it should be faster to just download the ATF content and then strem using
-Ajax requests the rest of your page.
+it should be faster to just download the ATF content and then stream the rest of
+your page with Ajax requests.
 
 Despite this limitation, it's still a good technique to have in your bag, and
 it shows how far web technologies have come since event 5 years ago.

@@ -20,6 +20,7 @@
 .post-header h1 {
     color: $primary-100;
     font-weight: 300;
+    text-align: center;
     @media screen and (min-width: 900px) {
         font-size: 60px;
     }
@@ -29,6 +30,7 @@
 }
 .post-header blockquote {
     margin-left: 20px;
+    float: right;
     color: lighten($primary-500, 30%);
 }
 .post-content {
