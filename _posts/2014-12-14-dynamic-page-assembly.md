@@ -42,8 +42,8 @@ To start off, here are the files we'll be working with (you can get the complete
   example from the [github repo][repo])
 
 {% highlight HTML %}
-  index.html
-  partials/
+index.html
+partials/
     footer.html
     header.html
     page1.html
@@ -119,8 +119,8 @@ This is the footer: <b>#time</b>
 {% endhighlight %}
 
 Nothing fancy, but it is important to note that the `#time` field will
-get replaced at the runtime with the timestamp of when the browser fetched
-the specific partial. We will this way track which pages are requested, and which
+get replaced at runtime with the timestamp of when the browser fetched
+the specific partial. This way, we can track which pages are requested, and which
 are cached.
 
 Now, let's get to some JavaScript
@@ -148,7 +148,7 @@ navigator.serviceWorker.register("/partials/serviceworker.js", { scope: "/partia
 Our service worker is registered under the "/partials/" scope; this way it can
 intercept all requests to that specific folder. This particular snippet
 is injected inside the `index.html` file. You can verify that everything is
-working by going to the `chrome://serviceworker-internals/` page inside Chrome,
+working correctly by going to the `chrome://serviceworker-internals/` page inside Chrome,
 where you should see something similar to this:
 
 ![Checking Service Workers](/assets/posts/dynamic-templates/sw-working.png)
@@ -201,7 +201,7 @@ var templates = [
   });
 {% endhighlight %}
 
-There's nothing fancy here, we just initialise IndexDB and create the
+Nothing revolutionary, we just initialise IndexDB and create the
 `templates` object store which will contain the HTML content of our cached
 partials. And because the IndexDB Api is mostly async, we'll be using
 [Promises][promises] to ensure everything is setup before we start storing objects.  
@@ -272,8 +272,8 @@ downloading by adding additional headers to the `fetch(...)` call we'll define
 below.
 
 Each of our partials are mapped to a promise which will get resolved once the
-HTML page is fully downloaded and stored into IndexDB. So after the install
-process, we will have the full offline version of our header and footer HTML
+HTML content is fully downloaded and stored into IndexDB. So after the install
+process is finished, we will have the full offline version of our header and footer HTML
 pages, which we can inject into our three pages.
 
 # Intercepting requests and performing dynamic assembly
@@ -382,8 +382,8 @@ processing done, it's time to return the content to the browser so it can be
 displayed to the user. Make sure to set the correct content type of the processed
 text so it can be rendered correctly.
 
-The `Response` object receives a plain string which represent the body of the
-request, and an option object, which, in our case, contains the headers to be
+The `Response` object receives a plain string as a parameter (which represent the body of the
+request), and an option object, which, in our case, contains the headers to be
 sent to the browser for processing.
 
 And that's about it for the code. Nothing fancy, but it works... sort of. So
@@ -392,7 +392,7 @@ let's see it in action.
 # Results
 
 Fire a python server (`python -m http.server`) and open one our three
-pages. The first time when you open any of them, you should see something similar
+pages. The first time you open any of them, you should see something similar
 to this:
 
 ![Checking Service Workers](/assets/posts/dynamic-templates/example1.png)
@@ -430,7 +430,7 @@ it should be faster to just download the ATF content and then stream the rest of
 your page with Ajax requests.
 
 Despite this limitation, it's still a good technique to have in your bag, and
-it shows how far web technologies have come since event 5 years ago.
+it shows how far web technologies have come since even 5 years ago.
 
 [jekyll]:      http://jekyllrb.com
 [jekyll-gh]:   https://github.com/jekyll/jekyll
