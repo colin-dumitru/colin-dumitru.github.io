@@ -6,12 +6,12 @@ categories: functional-programming JavaScript tutorial
 ---
 
 There's no denying a lot of cool stuff will be coming in ES6. Generators,
-classes, modules, proxies and a lot more goodies which will bring JavaScript into
+classes, modules, proxies, and a lot more goodies which will bring JavaScript into
 the modern age of programming. But for this short Blog post, we'll be focusing only
 on the functional aspect of the upcoming ES6 changes.
 
-The goal is to rewrite common operations, available natively in other
-functional programming languages, into JavaScript (with mostly one liner expressions).
+The goal is to rewrite common operations available natively in other
+functional programming languages into JavaScript (with mostly one liner expressions).
 
 All these examples have been tested on [Firefox 34](https://www.mozilla.org/en-US/firefox/new/),
 which includes implementations for all the upcoming ES6 features used in this
@@ -96,7 +96,8 @@ and the output is "John", as any sane programming language should output.
 # For comprehension
 
 Unlike Arrow functions, the new "For" syntax introduced with ES6 is just
-syntactic sugar over function calls.
+syntactic sugar over function calls. The "for" statement can be replaced with
+a "foreach" method call, and the "if" statement with a method call to "filter".
 
 **syntax**
 {% highlight text %}
@@ -108,6 +109,11 @@ expression must always start with "for".
 
 **example**
 {% highlight JavaScript %}
+// This example
+[ for (i of [1, 2, 3, 4, 5]) if (i % 2 == 0) 3 * i]
+// Is equivalent to
+[1, 2, 3, 4, 5].filter(i => i % 2 == 0).map(i => 3 * i)
+
 // This example
 [ for (i of ["John", "Mike"]) for (j of [1, 2]) i + j]
 // Is equivalent to
