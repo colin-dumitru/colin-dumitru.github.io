@@ -186,7 +186,7 @@ are even.
 # Zip
 
 This operation aggregates two separate lists, into a single list of pairs. It puts
-the first element of both input arrays input a single output pair, the second
+the first elements of both input arrays into a single output pair, the second
 elements of both input arrays into another pair, and so on. It's best understood
 with an example.
 
