@@ -45,7 +45,7 @@ But thankfully, there is a way to give hints to a browser that a particular DNS 
 <link rel="dns-prefetch" href="//dns-name">
 {% endhighlight %}
 
-It's important to note that this is just a *hint* and does not guaranty that the browser will actually resolve the given DNS.
+It's important to note that this is just a *hint* and does not guaranty that the browser will actually resolve the given DNS name.
 
 You can also measure the dns resolution time using navigation timing, if you need some actual Real User Metrics:
 
@@ -65,13 +65,13 @@ The bigest chunk of the network latency we saw when requesting our image was fro
 
 If your using regular HTTP requests (which you shouldn't) then the TCP connection protocol involves just a single roundtrip (SYN -> SYN + ACK -> ACK). But things get a little more complicated when adding SSL/TLS over regular TCP connections.
 
-Because SSL uses TCP as a transport protocol, to establish a connection, the same steps must be follows with a regular TCP connection (SYN -> SYN + ACK -> ACK), with an added difference where the last ACK packet sent to the server contains additional data needed to start SSL negotiation (Client Hello). From here, TCP will require **2** additional roundtrips to finish the protocol.
+Because SSL uses TCP as a transport protocol, to establish a connection, the same steps must be followed as with a regular TCP connection (SYN -> SYN + ACK -> ACK), with an added difference where the last ACK packet sent to the server contains additional data needed to start SSL negotiation (Client Hello). From here, SSL will require **2** additional roundtrips to finish the protocol.
 
 In our case, we do use HTTPS and SSL to request the sample image, so we incur a latency hit from **3** additional roundtrips, which in our case lasts a total of 79ms (including socket overhead). So let's see how the event for the TCP/SSL negotiation looks like, by once again visiting the [chrome://net-internals/#events](chrome://net-internals/#events) page:
 
 ![TCP connection 1](/assets/posts/network-latency/tcp_connect_1.png)
 
-We see from the event that the first round-trip took 36ms **(1)**, and this was just for the first TCP negotiation, before the SSL protocol starts. At time 36ms the "Client Hello" message is also sent, which ends in a response from the server at time 76ms **(2)**. So far so good. This ends the second round-trip out of a total of three.
+We see from the event details that the first round-trip took 36ms **(1)**, and this was just for the first TCP negotiation, before the SSL protocol starts. At time 36ms the "Client Hello" message is also sent, which ends in a response from the server at time 76ms **(2)**. So far so good. This ends the second round-trip out of a total of three.
 
 But let's look lower in the event description:
 
@@ -81,7 +81,7 @@ The application data (image content) started receiving when the third and final 
 
 But two full round-trips for each and every resource is a lot. For a website with 50 unique resources, TCP/SSL negotiation will delay the page from loading by 4 full seconds. That's a lot of network overhead.
 
-To eliminate some of this overhead, some alternatives to HTTPS have been created, including SPDY and HTTP/2. Both of these work over current the SSL implementation, but add multiplexing for a single connection. This means that you can stream multiple resources on the same TCP/SSL connection, reducing the overhead of creating a new connection for each requested resource.
+To eliminate some of this overhead, some alternatives to HTTPS have been created, including SPDY and HTTP/2. Both of these work over the current SSL implementation, but add multiplexing over a single connection. This means that you can stream multiple resources on the same TCP/SSL connection, reducing the overhead of creating a new connection for each requested resource.
 
 But SPDY and HTTP/2 adoption is not quite there yet, so Chrome uses some additional optimisation techniques to further reduce connection times.
 
@@ -91,15 +91,15 @@ Besides DNS names, Chrome also keeps a cache of active TCP connections. You can 
 
 In my case, after requesting the Google logo, I have one (duplicated) active socket connection (ssl/www.google.ro). Chrome imposes a maximum number of active TCP/SSL connections which can be cached per domain, with the current limit being 6 (and global maximum of 256). This means, that if your page has many resource which should be requested from the same domain, you'll only get 6 concurrent downloads. The rest will be queued until an open slot is made.
 
-But this limit also means that you'll incur a maximum of 6 TCP/SSL connection time penalty for the very first resources your request. The rest will re-use existing connections and bypass the initial overhead of establishing a link.
+But this limit also means that you'll incur a maximum of 6 TCP/SSL connection time penalties for the very first resources you request. The rest will re-use existing connections and bypass the initial overhead of establishing a link.
 
-In addition, these socket caches can be reused even when navigating to the same domain, either in the current tab or in a separate one, as Chrome has a monolithic network stack. Tabs might be split into multiple processes, but the one which actually requests resources from the network will always be shared between all running tabs.
+In addition, these socket caches can be reused even when navigating to the same domain, either in the current tab or in a separate one. This is because Chrome has a monolithic network stack. Tabs might get split into multiple processes, but the one which actually requests resources from the network will always be shared between all running tabs.
 
 To see this in action, let's see what happens to the network timings when opening the same image in a new tab:
 
 ![TCP connection 2](/assets/posts/network-latency/cached_ssl.png)
 
-Because the TCP/SSL connection is already cached from the previous tab, the browser san simply bypass the initial negotiation phase and perform a resource request from the start. Network timings reflect this, with 0 DNS resolution time and 0 initial connection time.
+Because the TCP/SSL connection is already cached from the previous tab, the browser can simply bypass the initial negotiation phase and perform a resource request from the start. Network timings reflect this, with 0 DNS resolution time and 0 initial connection time.
 
 And similar to DNS timings, you can get TCP/SSL timings for RUM by using the Navigation Timing API:
 
