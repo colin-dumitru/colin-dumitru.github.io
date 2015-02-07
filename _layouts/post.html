@@ -3,36 +3,36 @@ layout: default
 ---
 
 <header class="post-header">
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-1"></div>
-            <div class="col-lg-10">
-                <h1 class="post-title">{{ page.title }}</h1>
-                <blockquote>
-                    <a href="/">by {{site.name}} </a>
-                    <p class="post-meta">{{ page.date | date: "%b %-d, %Y" }}{% if page.author %} • {{ page.author }}{% endif %}{% if page.meta %} • {{ page.meta }}{% endif %}</p>
-                </blockquote>
-            </div>
-            <div class="col-lg-1"></div>
-        </div>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-1"></div>
+      <div class="col-lg-10">
+        <h1 class="post-title">{{ page.title }}</h1>
+        <blockquote>
+          <a href="/">by {{site.name}} </a>
+          <p class="post-meta">{{ page.date | date: "%b %-d, %Y" }}{% if page.author %} • {{ page.author }}{% endif %}{% if page.meta %} • {{ page.meta }}{% endif %}</p>
+        </blockquote>
+      </div>
+      <div class="col-lg-1"></div>
     </div>
+  </div>
 </header>
 
 <div class="container">
-    <div class="row">
-        <div class="col-lg-1">
-        </div>
-        <div class="col-lg-10">
-            <article class="post-content">
-                {{ content }}
-            </article>
-            <hr>
-            <div class="addthis_sharing_toolbox"></div>
-            <div id="disqus_thread"></div>
-        </div>
-        <div class="col-lg-1">
-        </div>
+  <div class="row">
+    <div class="col-md-1 col-lg-2">
     </div>
+    <div class="col-md-10 col-lg-8">
+      <article class="post-content">
+        {{ content }}
+      </article>
+      <hr>
+      <div class="addthis_sharing_toolbox"></div>
+      <div id="disqus_thread"></div>
+    </div>
+    <div class="col-md-1 col-lg-2">
+    </div>
+  </div>
 </div>
 
 
